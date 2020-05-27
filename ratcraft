@@ -1,0 +1,135 @@
+#!/usr/bin/bash
+
+# ratcraft - Ratfactor's Old School Minecraft Server Script
+#
+# Run without any arguments for terse usage. See README.md
+# for more detail.
+#
+# Copyright 2020 Dave Gauer
+# MIT license - see LICENSE file in this repo.
+# 
+
+rootdir=~/mcserver
+world=$rootdir/world
+backups=$rootdir/backups
+jar=~/minecraft_server.1.15.2.jar
+sname=ratcraftscreen
+start_cmd="java -Xms512M -Xmx1024M -XX:ParallelGCThreads=1 -jar '$jar' nogui"
+
+is_running() {
+	[[ -n "$(screen -ls | grep $sname)" ]]
+	return # return status of above test
+}
+
+servercmd() {
+	# Note lack of space between argument '$1' and the printf to produce
+	# the return character. Trailing space after the command will cause
+	# Minecraft to return 'Incorrect argument for command'.
+	# -S <session_name>
+	# -p <window#>
+	# -X <command>
+	# stuff "string" (GNU screen command to write to STDIN)
+	screen -S $sname -p 0 -X stuff "$1$(printf '\r')"
+	sleep 1
+	tail -3 $rootdir/logs/latest.log
+}
+
+status() {
+	echo "Settings:"
+	echo "    rootdir:    $rootdir"
+	echo "    world:      $world"
+	echo "    backups:    $backups"
+	echo "    jar:        $jar"
+	echo "    sname:      $sname (id of screen session)"
+	echo "    start_cmd:  $start_cmd"
+
+	if is_running
+	then
+		echo "Server is running."
+	else
+		echo "Server is NOT Running."
+	fi
+}
+
+backup() {
+	if [ ! -d $backups ]
+	then
+		mkdir -p $backups
+	fi
+
+	# inform users, suspend saving, backup, resume saving
+        servercmd "say Backing up world. Saving suspended..."
+        servercmd "save-off"
+        servercmd "save-all"
+	tar -cpvzf "$backups/bak-$(date "+%Y-%m-%d").tgz" $world/*
+        servercmd "save-on"
+        servercmd "say Backup done. World saving resumed."
+
+        # remove backups older than 2 weeks
+        find $backups/ -mtime +14 -exec rm {} \;
+	echo "Backup done."
+}
+
+start() {
+	if is_running
+	then
+		echo "Apparently already running."
+	fi
+
+	echo "Starting server..."
+	screen -S $sname -dm bash -c "cd $rootdir; $start_cmd"
+	echo "To see how it's going, try: ratcraft watch"
+}
+
+stop() {
+	if ! is_running
+	then
+		echo "Could not find screen session '$sname' to stop."
+		exit 1
+	fi
+
+	echo "Stopping server..."
+
+	servercmd "stop"
+	sleep 20
+
+	if ! is_running
+	then
+		echo "Server stopped"
+		exit
+	fi
+
+	echo "Server hasn't stopped yet. Killing screen session..."
+	screen -S $sname -p 0 -X quit
+
+	if is_running
+	then
+		echo "ERROR: Screen session '$sname' still running. Sorry."
+		exit 1
+	fi
+}
+
+case $1 in
+	backup)
+		backup
+		;;
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	status)
+		status
+		;;
+	watch)
+		tail -f $rootdir/logs/latest.log
+		;;
+	cmd)
+		servercmd "$2"
+		;;
+	*)
+		echo "Usage: ratcraft ( start | stop | status | backup | watch | cmd <command> )"
+		exit 1
+esac
+
