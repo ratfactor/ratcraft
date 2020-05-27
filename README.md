@@ -26,7 +26,7 @@ start_cmd="java -Xms512M -Xmx1024M -XX:ParallelGCThreads=1 -jar '$jar' nogui"
 In particular, the first four are likely to need some changes. These are my current actual settings.
 
 * `rootdir` - The server's working directory. Minecraft server will populate this with files such as `eula.txt`, `server.properties`, `whitelist.json`, and so forth.
-* `world` - (Directory) I have mine under `rootdir`, but this could be anywhere. Minecraft will populate this with files such as `level.dat`, etc. when it creates the world for the first time. You could also point this to the path of an existing world.
+* `world` - (Directory) This should match the `level-name` property in `server.properties` (which is created when the server first runs - will be `world` by default) and needs to be under the server root directory. Minecraft will populate the world directory with files such as `level.dat`, etc. when it creates the world for the first time.
 * `backups` - (Directory) Again, I've placed this under `rootdir`, but feel free to point this to any valid path. This is where the command `ratcraft backup` will attempt to save `*.tgz` backup files.
 * `jar` - This is the exact name of the Minecraft Java ARchive file (`*.jar`) you wish to run.  Could be a Bukkit or Spigot server or Vanilla Minecraft server from minecraft.net.  You choose the flavor!
 
