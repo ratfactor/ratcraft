@@ -1,4 +1,10 @@
 # ratcraft
+
+
+**MOVED!** Hello, I am moving my repos to http://ratfactor.com/repos/
+and setting them to read-only ("archived") on GitHub. Thank you, _-Dave_
+
+
 Minimal Bash Minecraft server launch/control/backup script.
 
 The purpose of this script is to daemonize a Minecraft server (run it in the background) using GNU `screen` (present on most UNIX-like OSs) and allow simple control of the server.  It follows the principal of "the simplest thing which could possibly work."
